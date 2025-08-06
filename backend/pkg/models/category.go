@@ -41,7 +41,7 @@ func (c *Category) UpdateDescription(description string) error {
 	query := `UPDATE categories SET description = ? WHERE id = ?`
 	_, err := DB.Exec(query, description, c.ID)
 	if err == nil {
-		c.Description = sdescription
+		c.Description = description
 	}
 	return err
 }
