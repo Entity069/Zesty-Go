@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: ./backend
+    container_name: zesty
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mysql:9.3
+    container_name: zesty-db
+    restart: unless-stopped
+    env_file:
+      - db/.env
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge

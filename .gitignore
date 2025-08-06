@@ -1,0 +1,4 @@
+db/.env
+backend/.env
+backend/node_modules/
+TODO.md
