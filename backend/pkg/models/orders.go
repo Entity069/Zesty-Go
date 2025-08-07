@@ -1,6 +1,7 @@
 package models
 
 import (
+	"slices"
 	"time"
 )
 
@@ -165,4 +166,53 @@ func CreateOrGetCart(userID int) (*Order, error) {
 	}
 
 	return newCart, nil
+}
+
+func SyncStatus(orderID int) error {
+	query := `SELECT status FROM order_items WHERE order_id = ?`
+	rows, err := DB.Query(query, orderID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var statuses []string
+	for rows.Next() {
+		var status string
+		if err := rows.Scan(&status); err != nil {
+			return err
+		}
+		statuses = append(statuses, status)
+	}
+
+	var newStatus string
+	allSame := func(slice []string, value string) bool {
+		for _, s := range slice {
+			if s != value {
+				return false
+			}
+		}
+		return true
+	}
+
+	if allSame(statuses, "ordered") {
+		newStatus = "ordered"
+	} else if allSame(statuses, "preparing") {
+		newStatus = "preparing"
+	} else if allSame(statuses, "prepared") {
+		newStatus = "prepared"
+	} else {
+		if slices.Contains(statuses, "preparing") {
+			newStatus = "preparing"
+		}
+		if newStatus == "" {
+			newStatus = "ordered"
+		}
+	}
+
+	order, err := GetOrderByID(orderID)
+	if err != nil {
+		return err
+	}
+	return order.UpdateStatus(newStatus)
 }
