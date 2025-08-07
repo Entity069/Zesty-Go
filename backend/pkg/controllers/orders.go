@@ -120,3 +120,103 @@ func (oc *OrderController) GetUserOrders(w http.ResponseWriter, r *http.Request)
 
 	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "orders": orders})
 }
+
+func (oc *OrderController) UpdateOrderItemCount(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r)
+	if !ok {
+		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+	userID, _ := strconv.Atoi(claims.ID)
+
+	type reqBody struct {
+		ItemID int    `json:"itemId"`
+		Action string `json:"action"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid JSON"})
+		return
+	}
+	if body.ItemID == 0 || (body.Action != "increase" && body.Action != "decrease") {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Bad json data"})
+		return
+	}
+
+	cart, err := models.CreateOrGetCart(userID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Cart error"})
+		return
+	}
+
+	switch body.Action {
+	case "increase":
+		if err := models.IncrementCartItem(cart.ID, body.ItemID, 1); err != nil {
+			oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Update failed"})
+			return
+		}
+	case "decrease":
+		if err := models.DecrementCartItem(cart.ID, body.ItemID, 1); err != nil {
+			oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Update failed"})
+			return
+		}
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true})
+}
+
+func (oc *OrderController) RateItem(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r)
+	if !ok {
+		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+	userID, _ := strconv.Atoi(claims.ID)
+
+	type reqBody struct {
+		ItemID int `json:"itemId"`
+		Rating int `json:"rating"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ItemID == 0 || body.Rating < 1 || body.Rating > 5 {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Bad json data"})
+		return
+	}
+
+	eligible, err := models.UserBought(userID, body.ItemID)
+	if err != nil || !eligible {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Item not eligible for rating"})
+		return
+	}
+	if already, _ := models.UserReviewed(userID, body.ItemID); already {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Already reviewed"})
+		return
+	}
+	if err := models.InsertReview(userID, body.ItemID, body.Rating); err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Insert failed"})
+		return
+	}
+	oc.jsonResp(w, http.StatusCreated, map[string]any{"success": true, "msg": "Your review was submitted!"})
+}
+
+func (oc *OrderController) DeliverOrder(w http.ResponseWriter, r *http.Request) {
+	type reqBody struct {
+		OrderID int `json:"orderId"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.OrderID == 0 {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Bad json data"})
+		return
+	}
+	order, err := models.GetOrderByID(body.OrderID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusNotFound, map[string]any{"success": false, "msg": "Order not found"})
+		return
+	}
+	if err := order.UpdateStatus("delivered"); err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed"})
+		return
+	}
+	_ = models.MarkDelivered(order.ID)
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Order marked as delivered."})
+}

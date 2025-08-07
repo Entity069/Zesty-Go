@@ -136,3 +136,35 @@ func (ac *AdminController) EditCategory(w http.ResponseWriter, r *http.Request) 
 
 	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Category updated successfully."})
 }
+
+func (ac *AdminController) AllItems(w http.ResponseWriter, _ *http.Request) {
+	items, err := models.GetAllItems()
+	if err != nil {
+		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
+		return
+	}
+	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "All items fetched successfully.", "items": items})
+}
+
+func (ac *AdminController) UpdateItemStatus(w http.ResponseWriter, r *http.Request) {
+	type reqBody struct {
+		ItemID int    `json:"itemId"`
+		Status string `json:"status"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ItemID == 0 || body.Status == "" {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Bad json data"})
+		return
+	}
+	item, err := models.GetItemByID(body.ItemID)
+	if err != nil {
+		ac.jsonResp(w, http.StatusNotFound, map[string]any{"success": false, "msg": "Item not found"})
+		return
+	}
+	item.Status = body.Status
+	if err := item.Update(); err != nil {
+		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Update failed"})
+		return
+	}
+	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Item status updated successfully."})
+}
