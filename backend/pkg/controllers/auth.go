@@ -87,7 +87,7 @@ func (ac *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	activationURL := fmt.Sprintf("http://%s/api/auth/verify?token=%s", config.SiteName(), tokenString)
 
 	emailData := map[string]string{"activation_url": activationURL}
-	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/test.html", emailData); err != nil {
+	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/confirm.html", emailData); err != nil {
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to send confirmation email."})
 		return
 	}
@@ -225,7 +225,7 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 	resetURL := fmt.Sprintf("http://%s/pwd-reset?token=%s", config.SiteName(), tokenString)
 	emailData := map[string]string{"reset_url": resetURL}
 
-	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/test.html", emailData); err != nil {
+	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/forgot.html", emailData); err != nil {
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to send password reset email."})
 		return
 	}
