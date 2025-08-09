@@ -1,6 +1,6 @@
 # Zesty
 
-A Food Ordering System in Nodejs+MySQL.
+A Food Ordering System in Go+MySQL.
 
 ## Installation
 
