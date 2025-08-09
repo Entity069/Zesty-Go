@@ -1,4 +1,0 @@
-USE `zestydb`;
-
-DELETE FROM `categories`
- WHERE `id` IN (1,2,3,11,12,13,14,15,16,17,18);

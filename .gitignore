@@ -1,4 +1,2 @@
-db/.env
-backend/.env
-backend/main.go
+.env
 TODO.md
