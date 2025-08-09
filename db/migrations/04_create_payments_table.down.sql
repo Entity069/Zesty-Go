@@ -1,2 +1,2 @@
-USE `zesty_db`;
+USE `zestydb`;
 DROP TABLE IF EXISTS `payments`;
