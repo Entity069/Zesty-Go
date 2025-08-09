@@ -22,7 +22,7 @@ func (uc *UserController) jsonResp(w http.ResponseWriter, status int, payload an
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
-func (uc *UserController) UpdateAddress(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) UpdateUserAddress(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserClaims(r)
 	if !ok {
 		uc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
@@ -55,7 +55,7 @@ func (uc *UserController) UpdateAddress(w http.ResponseWriter, r *http.Request) 
 	uc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Address updated successfully."})
 }
 
-func (uc *UserController) UpdateBalance(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) UpdateUserBalance(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserClaims(r)
 	if !ok {
 		uc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
@@ -92,7 +92,7 @@ func (uc *UserController) UpdateBalance(w http.ResponseWriter, r *http.Request) 
 	uc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Balance added successfully."})
 }
 
-func (uc *UserController) UpdateDetails(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserClaims(r)
 	if !ok {
 		uc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
@@ -139,10 +139,10 @@ func (uc *UserController) UpdateDetails(w http.ResponseWriter, r *http.Request) 
 		user.Password = string(hashedPassword)
 	}
 
-	// TODO: logout user if email is changed
-	// if user.Email != body.Email {
-	// 	user.IsVerified = false
-	// }
+	if user.Email != body.Email {
+		user.Email = body.Email
+		user.IsVerified = false
+	}
 
 	if err := user.Update(); err != nil {
 		uc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Update failed"})

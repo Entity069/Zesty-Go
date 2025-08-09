@@ -39,7 +39,7 @@ func (ac *AdminController) AllUsers(w http.ResponseWriter, r *http.Request) {
 	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "All users fetched successfully.", "users": users})
 }
 
-func (ac *AdminController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (ac *AdminController) UpdateUserByAdmin(w http.ResponseWriter, r *http.Request) {
 	type reqBody struct {
 		ID        int    `json:"id"`
 		FirstName string `json:"first_name"`

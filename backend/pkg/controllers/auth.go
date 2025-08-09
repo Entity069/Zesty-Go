@@ -215,6 +215,7 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 
 	// reset token secret = user password hash + updated_at
 	// this ensures that the jwt signatrue changes if the password is updated
+	// prevents replay attacks
 	key := fmt.Appendf(nil, "%s%s", user.Password, user.UpdatedAt.String())
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": body.Email,

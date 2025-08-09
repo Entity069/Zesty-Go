@@ -22,7 +22,7 @@ func main() {
 	models.InitDB()
 	defer func() {
 		if err := models.CloseDB(); err != nil {
-			log.Printf("fuck: error closing DB: %v", err)
+			log.Printf("nay: error closing DB: %v", err)
 		}
 	}()
 
@@ -38,7 +38,7 @@ func main() {
 	go func() {
 		log.Printf("app listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("fuck: server error: %v", err)
+			log.Fatalf("nay: server error: %v", err)
 		}
 	}()
 
@@ -50,7 +50,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("fuck: graceful shutdown failed: %v", err)
+		log.Printf("nay: graceful shutdown failed: %v", err)
 	}
 	log.Println("server exited")
 }
