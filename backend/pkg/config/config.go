@@ -63,7 +63,7 @@ func LoadEmailConfig() EmailConfig {
 }
 
 func SiteName() string {
-	site := getEnv("SITE_NAME", "localhost:8080")
+	site := getEnv("SITE_NAME", "localhost:3000")
 	if site == "" {
 		panic("SITE_NAME environment variable is not set!")
 	}
