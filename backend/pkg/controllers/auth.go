@@ -193,7 +193,7 @@ func (ac *AuthController) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/verified", http.StatusFound)
+	ac.jsonResp(w, http.StatusCreated, map[string]any{"success": true, "msg": "Your email has been verified successfully!"})
 }
 
 func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) {
