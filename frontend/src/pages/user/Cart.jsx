@@ -30,6 +30,7 @@ const Cart = () => {
       const data = await response.json()
       if (data.success) {
         setCartItems(data.cart?.items)
+        showSuccess("Cart Loaded", data.msg)
       } else {
         showError("Error", data.msg || "Failed to load cart items")
       }
