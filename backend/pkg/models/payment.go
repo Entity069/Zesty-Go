@@ -57,16 +57,6 @@ func (p *Payment) UpdateAmount(amount float64) error {
 	}
 	return err
 }
-
-func (p *Payment) UpdateDiscount(discount float64) error {
-	query := `UPDATE payments SET discount = ? WHERE id = ?`
-	_, err := DB.Exec(query, discount, p.ID)
-	if err == nil {
-		p.Discount = discount
-	}
-	return err
-}
-
 func (p *Payment) Delete() error {
 	query := `DELETE FROM payments WHERE id = ?`
 	_, err := DB.Exec(query, p.ID)

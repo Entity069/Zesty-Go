@@ -3,10 +3,13 @@ package controllers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Entity069/Zesty-Go/pkg/middleware"
 	"github.com/Entity069/Zesty-Go/pkg/models"
+	"github.com/gorilla/mux"
 )
 
 type OrderController struct{}
@@ -43,6 +46,13 @@ func (oc *OrderController) AddToCart(w http.ResponseWriter, r *http.Request) {
 	_, err := models.CreateOrGetCart(userID)
 	if err != nil {
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Cart creation failed"})
+		return
+	}
+
+	_, err = models.AddItemToCart(userID, body.ItemID, body.Quantity)
+	if err != nil {
+		fmt.Println("Error adding item to cart:", body.ItemID, "Quantity:", body.Quantity, "Error:", err)
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to add item to cart"})
 		return
 	}
 
@@ -261,4 +271,37 @@ func (oc *OrderController) DeliverOrder(w http.ResponseWriter, r *http.Request) 
 	}
 	_ = models.MarkDelivered(order.ID)
 	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Order marked as delivered."})
+}
+
+func (oc *OrderController) GetAllCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := models.GetAllCategories()
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch categories"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Categories fetched successfully", "categories": categories})
+}
+
+func (oc *OrderController) GetItemsByCategoryID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	categoryID, err := strconv.Atoi(vars["category_id"])
+	if err != nil {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid category ID"})
+		return
+	}
+
+	items, err := models.GetItemsByCategoryID(categoryID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
+		return
+	}
+
+	category, err := models.GetCategoryByID(categoryID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Items fetched successfully", "items": items, "category": category})
 }

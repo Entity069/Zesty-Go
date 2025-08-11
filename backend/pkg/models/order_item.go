@@ -89,3 +89,23 @@ func GetOrdersBySellerID(sellerID int) ([]map[string]interface{}, error) {
 	}
 	return orders, nil
 }
+
+func GetItemsByCategoryID(categoryID int) ([]*Item, error) {
+	query := `SELECT id, name, description, price FROM items WHERE category_id = ?`
+	rows, err := DB.Query(query, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*Item
+	for rows.Next() {
+		item := &Item{}
+		err := rows.Scan(&item.ID, &item.Name, &item.Description, &item.Price)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}

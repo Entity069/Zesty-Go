@@ -14,7 +14,6 @@ type Item struct {
 	Status      string    `json:"status"`
 	Image       string    `json:"image"`
 	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (i *Item) Create() error {
@@ -67,7 +66,7 @@ func GetAllItems() ([]*Item, error) {
 		item := &Item{}
 		var categoryName string
 		var rating float64
-		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &item.UpdatedAt, &categoryName, &rating)
+		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &categoryName, &rating)
 		if err != nil {
 			return nil, err
 		}
@@ -78,8 +77,8 @@ func GetAllItems() ([]*Item, error) {
 
 func GetItemByID(id int) (*Item, error) {
 	item := &Item{}
-	query := `SELECT id, seller_id, name, description, price, category_id, status, image, created_at, updated_at FROM items WHERE id = ?`
-	err := DB.QueryRow(query, id).Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &item.UpdatedAt)
+	query := `SELECT id, seller_id, name, description, price, category_id, status, image, created_at FROM items WHERE id = ?`
+	err := DB.QueryRow(query, id).Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +109,7 @@ func GetItemsBySellerID(sellerID int) ([]*Item, error) {
 		var categoryName string
 		var rating float64
 		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price,
-			&item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &item.UpdatedAt,
+			&item.CategoryID, &item.Status, &item.Image, &item.CreatedAt,
 			&categoryName, &rating)
 		if err != nil {
 			return nil, err

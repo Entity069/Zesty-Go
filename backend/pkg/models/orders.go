@@ -8,23 +8,14 @@ import (
 )
 
 type Order struct {
-	ID          int        `json:"id"`
-	UserID      int        `json:"user_id"`
-	Status      string     `json:"status"`
-	Message     string     `json:"message"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-	TotalAmount float64    `json:"total_amount,omitempty"`
-	Items       []CartItem `json:"items,omitempty"`
-}
-
-type CartItem struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
-	Image       string  `json:"image"`
-	Description string  `json:"description"`
-	Quantity    int     `json:"quantity"`
-	UnitPrice   float64 `json:"unit_price"`
+	ID          int         `json:"id"`
+	UserID      int         `json:"user_id"`
+	Status      string      `json:"status"`
+	Message     string      `json:"message"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+	TotalAmount float64     `json:"total_amount"`
+	Items       []OrderItem `json:"items"`
 }
 
 func (o *Order) Create() error {
@@ -169,12 +160,12 @@ func GetCartByUserID(userID int) (*Order, error) {
 				WHEN COUNT(oi.id) > 0 THEN
 					JSON_ARRAYAGG(
 						JSON_OBJECT(
-							'id',         i.id,
-							'name',       i.name,
-							'image',      i.image,
-							'description', i.description,
+							'id',         oi.id,
+							'order_id',   oi.order_id,
+							'item_id',    oi.item_id,
 							'quantity',   oi.quantity,
-							'unit_price', oi.unit_price
+							'unit_price', oi.unit_price,
+							'status',     oi.status
 						)
 					)
 				ELSE JSON_ARRAY()
@@ -210,7 +201,7 @@ func GetCartByUserID(userID int) (*Order, error) {
 			return nil, fmt.Errorf("failed to parse items JSON: %w", err)
 		}
 	} else {
-		cart.Items = []CartItem{}
+		cart.Items = []OrderItem{}
 	}
 
 	return cart, nil
@@ -292,4 +283,50 @@ func CalculateCartTotal(cartID int) (float64, error) {
 		return 0, err
 	}
 	return total, nil
+}
+
+func AddItemToCart(userID int, itemID int, quantity int) (*OrderItem, error) {
+	cart, err := CreateOrGetCart(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	item, err := GetItemByID(itemID)
+	if err != nil {
+		return nil, err
+	}
+	var existingItem *OrderItem
+	for i := range cart.Items {
+		if cart.Items[i].ItemID == itemID {
+			existingItem = &cart.Items[i]
+			break
+		}
+	}
+
+	if existingItem != nil {
+		existingItem.Quantity += quantity
+		query := `UPDATE order_items SET quantity = ? WHERE id = ?`
+		_, err = DB.Exec(query, existingItem.Quantity, existingItem.ID)
+		if err != nil {
+			fmt.Println("Error updating existing item in cart:", err)
+			return nil, err
+		}
+		return existingItem, nil
+	} else {
+		orderItem := &OrderItem{
+			OrderID:   cart.ID,
+			ItemID:    itemID,
+			Quantity:  quantity,
+			UnitPrice: item.Price,
+			Status:    "cart",
+		}
+
+		err = orderItem.Create()
+		if err != nil {
+			fmt.Println("Error creating new order item:", err)
+			return nil, err
+		}
+
+		return orderItem, nil
+	}
 }

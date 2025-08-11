@@ -88,7 +88,7 @@ CREATE TABLE `order_items` (
   `order_id` int NOT NULL,
   `item_id` int NOT NULL,
   `quantity` int NOT NULL,
-  `status` enum('ordered','preparing','prepared','cancelled','delivered') NOT NULL DEFAULT 'ordered',
+  `status` enum('cart', 'ordered','preparing','prepared','cancelled','delivered') NOT NULL DEFAULT 'cart',
   `unit_price` decimal(10,2) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
