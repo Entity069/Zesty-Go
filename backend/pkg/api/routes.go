@@ -19,6 +19,7 @@ func NewRouter() *mux.Router {
 	userController := controllers.NewUserController()
 
 	r.HandleFunc("/api/auth/register", authController.Register).Methods(http.MethodPost)
+	r.HandleFunc("/api/auth/whoami", authController.WhoAmI).Methods(http.MethodGet)
 	r.HandleFunc("/api/auth/login", authController.Login).Methods(http.MethodPost)
 	r.HandleFunc("/api/auth/logout", authController.Logout).Methods(http.MethodGet)
 	r.HandleFunc("/api/auth/verify", authController.VerifyEmail).Methods(http.MethodGet)

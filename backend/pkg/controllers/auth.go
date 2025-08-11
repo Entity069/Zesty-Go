@@ -112,6 +112,64 @@ func (ac *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	ac.jsonResp(w, http.StatusCreated, map[string]any{"success": true, "msg": "User registered successfully! Please check your email for a confirmation email."})
 }
 
+func (ac *AuthController) WhoAmI(w http.ResponseWriter, r *http.Request) {
+	type reqBody struct {
+		Token string `json:"token"`
+	}
+
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid JSON"})
+		return
+	}
+
+	if body.Token == "" {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Token is required!"})
+		return
+	}
+
+	token, err := jwt.Parse(body.Token, func(token *jwt.Token) (any, error) {
+		return config.JWTSecret(), nil
+	})
+	if err != nil || !token.Valid {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Invalid token"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Invalid token"})
+		return
+	}
+
+	id, ok := claims["id"].(float64)
+	if !ok {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "ID not found in token"})
+		return
+	}
+
+	user, err := models.GetUserByID(int(id))
+	if err != nil {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "User not found"})
+		return
+	}
+
+	ac.jsonResp(w, http.StatusOK, map[string]any{
+		"success": true,
+		"user": map[string]any{
+			"id":          user.ID,
+			"first_name":  user.FirstName,
+			"last_name":   user.LastName,
+			"email":       user.Email,
+			"address":     user.Address,
+			"user_type":   user.UserType,
+			"balance":     user.Balance,
+			"is_verified": user.IsVerified,
+			"profile_pic": user.ProfilePic,
+		},
+	})
+}
+
 func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	type reqBody struct {
 		Email    string `json:"email"`
@@ -170,13 +228,16 @@ func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ac *AuthController) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	tokenString := r.URL.Query().Get("token")
-	if tokenString == "" {
+	type reqBody struct {
+		Token string `json:"token"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Token == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
 		return
 	}
 
-	email, err := ac.getEmailFromJWT(tokenString)
+	email, err := ac.getEmailFromJWT(body.Token)
 	if err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
 		return
@@ -235,7 +296,14 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ac *AuthController) PostResetPassword(w http.ResponseWriter, r *http.Request) {
-	tokenString := r.URL.Query().Get("token")
+	var req struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
+		return
+	}
+	tokenString := req.Token
 	if tokenString == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
 		return
