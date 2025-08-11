@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 
 const ToastContext = createContext()
 
@@ -14,6 +15,11 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([])
+  const location = useLocation()
+
+  useEffect(() => {
+    setToasts([])
+  }, [location.pathname])
 
   const showSuccess = (title, message) => {
     const id = Date.now()
@@ -49,11 +55,16 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id))
   }
 
+  const clearToasts = () => {
+    setToasts([])
+  }
+
   const value = {
     toasts,
     showSuccess,
     showError,
     removeToast,
+    clearToasts,
   }
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>

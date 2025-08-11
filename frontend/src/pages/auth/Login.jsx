@@ -34,8 +34,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      const userRole = user.user_type
-      switch (userRole) {
+      switch (user.user_type) {
         case "admin":
           navigate("/admin/dashboard", { replace: true })
           break
@@ -85,11 +84,10 @@ const Login = () => {
     if (result.success) {
       showSuccess("Login Successful!", result.msg)
       
-      const userRole = result.user?.user_type
-      console.log(userRole)
+      console.log(result.user?.user_type)
       
       setTimeout(() => {
-        switch (userRole) {
+        switch (result.user?.user_type) {
           case "admin":
             navigate("/admin/dashboard", { replace: true })
             break

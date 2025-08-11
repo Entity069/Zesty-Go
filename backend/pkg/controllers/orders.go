@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -151,6 +152,10 @@ func (oc *OrderController) GetUserCart(w http.ResponseWriter, r *http.Request) {
 
 	cart, err := models.GetCartByUserID(userID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "No active cart", "cart": map[string]any{"id": 0, "total_amount": 0, "items": []any{}, "status": "empty"}})
+			return
+		}
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch cart"})
 		return
 	}

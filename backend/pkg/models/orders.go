@@ -1,17 +1,30 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
 	"slices"
 	"time"
 )
 
 type Order struct {
-	ID        int       `json:"id"`
-	UserID    int       `json:"user_id"`
-	Status    string    `json:"status"`
-	Message   string    `json:"message"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          int        `json:"id"`
+	UserID      int        `json:"user_id"`
+	Status      string     `json:"status"`
+	Message     string     `json:"message"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	TotalAmount float64    `json:"total_amount,omitempty"`
+	Items       []CartItem `json:"items,omitempty"`
+}
+
+type CartItem struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Image       string  `json:"image"`
+	Description string  `json:"description"`
+	Quantity    int     `json:"quantity"`
+	UnitPrice   float64 `json:"unit_price"`
 }
 
 func (o *Order) Create() error {
@@ -139,14 +152,68 @@ func GetAllOrders() ([]*Order, error) {
 }
 
 func GetCartByUserID(userID int) (*Order, error) {
-	order := &Order{}
-	query := `SELECT id, user_id, status, message, created_at, updated_at FROM orders WHERE user_id = ? AND status = 'cart'`
+	cart := &Order{}
+	var itemsJSON *string
+	var totalAmount *float64
 
-	err := DB.QueryRow(query, userID).Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt)
+	query := `
+		SELECT
+			o.id            AS order_id,
+			o.user_id       AS user_id,
+			o.status        AS status,
+			o.message       AS message,
+			o.created_at    AS created_at,
+			o.updated_at    AS updated_at,
+			COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_amount,
+			CASE 
+				WHEN COUNT(oi.id) > 0 THEN
+					JSON_ARRAYAGG(
+						JSON_OBJECT(
+							'id',         i.id,
+							'name',       i.name,
+							'image',      i.image,
+							'description', i.description,
+							'quantity',   oi.quantity,
+							'unit_price', oi.unit_price
+						)
+					)
+				ELSE JSON_ARRAY()
+			END AS items_json
+		FROM orders o
+		LEFT JOIN order_items oi ON oi.order_id = o.id
+		LEFT JOIN items i        ON i.id        = oi.item_id
+		WHERE o.user_id = ? AND o.status = 'cart'
+		GROUP BY o.id, o.user_id, o.status, o.message, o.created_at, o.updated_at
+		ORDER BY o.created_at DESC`
+
+	err := DB.QueryRow(query, userID).Scan(
+		&cart.ID,
+		&cart.UserID,
+		&cart.Status,
+		&cart.Message,
+		&cart.CreatedAt,
+		&cart.UpdatedAt,
+		&totalAmount,
+		&itemsJSON,
+	)
 	if err != nil {
 		return nil, err
 	}
-	return order, nil
+
+	if totalAmount != nil {
+		cart.TotalAmount = *totalAmount
+	}
+
+	if itemsJSON != nil && *itemsJSON != "" && *itemsJSON != "null" {
+		err = json.Unmarshal([]byte(*itemsJSON), &cart.Items)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse items JSON: %w", err)
+		}
+	} else {
+		cart.Items = []CartItem{}
+	}
+
+	return cart, nil
 }
 
 func CreateOrGetCart(userID int) (*Order, error) {
