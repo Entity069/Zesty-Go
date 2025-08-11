@@ -113,22 +113,13 @@ func (ac *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ac *AuthController) WhoAmI(w http.ResponseWriter, r *http.Request) {
-	type reqBody struct {
-		Token string `json:"token"`
-	}
-
-	var body reqBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid JSON"})
+	cookie, err := r.Cookie("token")
+	if err != nil || cookie.Value == "" {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Missing or invalid token"})
 		return
 	}
 
-	if body.Token == "" {
-		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Token is required!"})
-		return
-	}
-
-	token, err := jwt.Parse(body.Token, func(token *jwt.Token) (any, error) {
+	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (any, error) {
 		return config.JWTSecret(), nil
 	})
 	if err != nil || !token.Valid {
@@ -228,16 +219,13 @@ func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ac *AuthController) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	type reqBody struct {
-		Token string `json:"token"`
-	}
-	var body reqBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Token == "" {
+	tokenString := r.URL.Query().Get("token")
+	if tokenString == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
 		return
 	}
 
-	email, err := ac.getEmailFromJWT(body.Token)
+	email, err := ac.getEmailFromJWT(tokenString)
 	if err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
 		return
@@ -296,31 +284,28 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ac *AuthController) PostResetPassword(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Token string `json:"token"`
+	var reqBody struct {
+		Token    string `json:"token"`
+		Password string `json:"password"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
 		return
 	}
-	tokenString := req.Token
+	tokenString := reqBody.Token
 	if tokenString == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
+		return
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil || reqBody.Password == "" {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
 		return
 	}
 
 	email, err := ac.getEmailFromJWT(tokenString)
 	if err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
-		return
-	}
-
-	type reqBody struct {
-		Password string `json:"password"`
-	}
-	var body reqBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Password == "" {
-		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
 		return
 	}
 
@@ -339,7 +324,7 @@ func (ac *AuthController) PostResetPassword(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	newHash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+	newHash, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), 10)
 	if err != nil {
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Hashing failed"})
 		return
