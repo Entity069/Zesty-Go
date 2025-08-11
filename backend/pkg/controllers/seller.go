@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/Entity069/Zesty-Go/pkg/middleware"
 	"github.com/Entity069/Zesty-Go/pkg/models"
@@ -28,7 +27,7 @@ func (sc *SellerController) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sellerID, _ := strconv.Atoi(claims.ID)
+	sellerID := claims.ID
 
 	type reqBody struct {
 		Name        string  `json:"name"`
@@ -80,7 +79,7 @@ func (sc *SellerController) GetSellerItems(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sellerID, _ := strconv.Atoi(claims.ID)
+	sellerID := claims.ID
 
 	items, err := models.GetItemsBySellerID(sellerID)
 	if err != nil {
@@ -102,7 +101,7 @@ func (sc *SellerController) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sellerID, _ := strconv.Atoi(claims.ID)
+	sellerID := claims.ID
 
 	type reqBody struct {
 		ID          int     `json:"id"`
@@ -160,7 +159,7 @@ func (sc *SellerController) GetSellerOrders(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	sellerID, _ := strconv.Atoi(claims.ID)
+	sellerID := claims.ID
 
 	orders, err := models.GetOrdersBySellerID(sellerID)
 	if err != nil {
@@ -229,7 +228,7 @@ func (sc *SellerController) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sellerID, _ := strconv.Atoi(claims.ID)
+	sellerID := claims.ID
 
 	revenue, _ := models.GetSellerRevenue(sellerID)
 	itemCount, _ := models.GetSellerItemCount(sellerID)

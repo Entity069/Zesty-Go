@@ -216,3 +216,13 @@ func SyncStatus(orderID int) error {
 	}
 	return order.UpdateStatus(newStatus)
 }
+
+func CalculateCartTotal(cartID int) (float64, error) {
+	query := `SELECT SUM(oi.price * oi.count) FROM order_items oi WHERE oi.order_id = ?`
+	var total float64
+	err := DB.QueryRow(query, cartID).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}

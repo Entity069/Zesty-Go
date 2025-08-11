@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/Entity069/Zesty-Go/pkg/middleware"
 	"github.com/Entity069/Zesty-Go/pkg/models"
@@ -28,7 +27,7 @@ func (oc *OrderController) AddToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		ItemID   int `json:"itemId"`
@@ -56,7 +55,7 @@ func (oc *OrderController) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	cart, err := models.GetCartByUserID(userID)
 	if err != nil {
@@ -64,10 +63,30 @@ func (oc *OrderController) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: calc total, check balance, update status
+	total, err := models.CalculateCartTotal(cart.ID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to calculate total"})
+		return
+	}
+
+	user, err := models.GetUserByID(userID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to get user info"})
+		return
+	}
+
+	if user.Balance < total {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Insufficient balance"})
+		return
+	}
+
+	if err := user.UpdateBalance(user.Balance - total); err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to update balance"})
+		return
+	}
 
 	if err := cart.UpdateStatus("ordered"); err != nil {
-		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Order placement failed"})
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Order failed"})
 		return
 	}
 
@@ -110,7 +129,7 @@ func (oc *OrderController) GetUserOrders(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	orders, err := models.GetOrdersByUserID(userID)
 	if err != nil {
@@ -118,7 +137,25 @@ func (oc *OrderController) GetUserOrders(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "orders": orders})
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Orders fetched successfully", "orders": orders})
+}
+
+func (oc *OrderController) GetUserCart(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r)
+	if !ok {
+		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+
+	userID := claims.ID
+
+	cart, err := models.GetCartByUserID(userID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch cart"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Cart fetched successfully", "cart": cart})
 }
 
 func (oc *OrderController) UpdateOrderItemCount(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +164,7 @@ func (oc *OrderController) UpdateOrderItemCount(w http.ResponseWriter, r *http.R
 		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
 		return
 	}
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		ItemID int    `json:"itemId"`
@@ -171,7 +208,7 @@ func (oc *OrderController) RateItem(w http.ResponseWriter, r *http.Request) {
 		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
 		return
 	}
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		ItemID int `json:"itemId"`

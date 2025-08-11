@@ -11,7 +11,7 @@ import (
 )
 
 type UserClaims struct {
-	ID   string `json:"id"`
+	ID   int    `json:"id"`
 	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
@@ -64,8 +64,8 @@ func VerifyToken(next http.Handler) http.Handler {
 
 		claims, err := ValidateToken(tok)
 		if err != nil {
-			utils.ClearCookie(w)
 			http.Redirect(w, r, "/register", http.StatusUnauthorized)
+
 			return
 		}
 
@@ -91,7 +91,6 @@ func RedirectIfIn(next http.Handler) http.Handler {
 				http.Redirect(w, r, path, http.StatusFound)
 				return
 			}
-			utils.ClearCookie(w)
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -105,7 +104,6 @@ func LoginRequired(next http.Handler) http.Handler {
 			return
 		}
 		if _, err := ValidateToken(tok); err != nil {
-			utils.ClearCookie(w)
 			http.Redirect(w, r, "/register", http.StatusUnauthorized)
 			return
 		}
@@ -124,7 +122,6 @@ func RoleRequired(requiredRole string) func(http.Handler) http.Handler {
 
 			claims, err := ValidateToken(tok)
 			if err != nil {
-				utils.ClearCookie(w)
 				http.Redirect(w, r, "/register", http.StatusUnauthorized)
 				return
 			}

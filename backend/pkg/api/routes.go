@@ -31,7 +31,8 @@ func NewRouter() *mux.Router {
 	orderSubroute.HandleFunc("/add-to-cart", orderController.AddToCart).Methods(http.MethodPost)
 	orderSubroute.HandleFunc("/place-order", orderController.PlaceOrder).Methods(http.MethodPost)
 	orderSubroute.HandleFunc("/cancel-order", orderController.CancelOrder).Methods(http.MethodPost)
-	orderSubroute.HandleFunc("/update-count", orderController.UpdateOrderItemCount).Methods("POST")
+	orderSubroute.HandleFunc("/update-count", orderController.UpdateOrderItemCount).Methods(http.MethodPost)
+	orderSubroute.HandleFunc("/user-cart", orderController.GetUserCart).Methods(http.MethodGet)
 
 	userSubroute := r.PathPrefix("/api/user").Subrouter()
 	userSubroute.Use(middleware.VerifyToken, middleware.LoginRequired)

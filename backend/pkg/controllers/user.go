@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/Entity069/Zesty-Go/pkg/middleware"
 	"github.com/Entity069/Zesty-Go/pkg/models"
@@ -29,7 +28,7 @@ func (uc *UserController) UpdateUserAddress(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		Address string `json:"addr"`
@@ -62,7 +61,7 @@ func (uc *UserController) UpdateUserBalance(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		Balance float64 `json:"balance"`
@@ -84,7 +83,7 @@ func (uc *UserController) UpdateUserBalance(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := user.AddBalance(body.Balance); err != nil {
+	if err := user.UpdateBalance(body.Balance + user.Balance); err != nil {
 		uc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Update failed"})
 		return
 	}
@@ -99,7 +98,7 @@ func (uc *UserController) UpdateUserDetails(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userID, _ := strconv.Atoi(claims.ID)
+	userID := claims.ID
 
 	type reqBody struct {
 		FirstName   string `json:"first_name"`

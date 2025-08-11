@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"time"
 )
 
@@ -60,17 +59,6 @@ func (u *User) UpdateBalance(newBalance float64) error {
 		u.Balance = newBalance
 	}
 	return err
-}
-
-func (u *User) DeductBalance(amount float64) error {
-	if u.Balance < amount {
-		return sql.ErrNoRows
-	}
-	return u.UpdateBalance(u.Balance - amount)
-}
-
-func (u *User) AddBalance(amount float64) error {
-	return u.UpdateBalance(u.Balance + amount)
 }
 
 func (u *User) Delete() error {

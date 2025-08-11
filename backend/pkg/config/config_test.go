@@ -70,7 +70,7 @@ func TestLoadEmailConfig(t *testing.T) {
 func TestValidateTokenSuccess(t *testing.T) {
 	secret := config.JWTSecret()
 	claims := jwt.MapClaims{
-		"id":   "69",
+		"id":   69,
 		"role": "admin",
 		"exp":  time.Now().Add(1 * time.Hour).Unix(),
 	}
@@ -80,7 +80,7 @@ func TestValidateTokenSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if userClaims.ID != "69" || userClaims.Role != "admin" {
+	if userClaims.ID != 69 || userClaims.Role != "admin" {
 		t.Fatalf("unexpected claims: %+v", userClaims)
 	}
 }
@@ -88,7 +88,7 @@ func TestValidateTokenSuccess(t *testing.T) {
 func TestValidateTokenExpired(t *testing.T) {
 	secret := config.JWTSecret()
 	claims := jwt.MapClaims{
-		"id":   "69",
+		"id":   69,
 		"role": "user",
 		"exp":  time.Now().Add(-1 * time.Hour).Unix(),
 	}
