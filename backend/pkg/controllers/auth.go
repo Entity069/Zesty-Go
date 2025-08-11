@@ -210,7 +210,19 @@ func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	ac.jsonResp(w, http.StatusCreated, map[string]any{"success": true, "msg": "You will be redirected in a minute..."})
+	ac.jsonResp(w, http.StatusCreated, map[string]any{"success": true,
+		"msg": "You will be redirected in a minute...",
+		"user": map[string]any{
+			"id":          user.ID,
+			"first_name":  user.FirstName,
+			"last_name":   user.LastName,
+			"email":       user.Email,
+			"address":     user.Address,
+			"user_type":   user.UserType,
+			"balance":     user.Balance,
+			"is_verified": user.IsVerified,
+			"profile_pic": user.ProfilePic,
+		}})
 }
 
 func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
