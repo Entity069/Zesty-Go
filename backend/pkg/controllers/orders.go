@@ -237,15 +237,15 @@ func (oc *OrderController) RateItem(w http.ResponseWriter, r *http.Request) {
 
 	eligible, err := models.UserBought(userID, body.ItemID)
 	if err != nil || !eligible {
-		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Item not eligible for rating"})
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Have some shame. You are reviewing an item which you didn't even bought. No wonder you are a brokie."})
 		return
 	}
 	if already, _ := models.UserReviewed(userID, body.ItemID); already {
-		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Already reviewed"})
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "You've already submitted a review for this item."})
 		return
 	}
 	if err := models.InsertReview(userID, body.ItemID, body.Rating); err != nil {
-		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Insert failed"})
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Internal server error."})
 		return
 	}
 	oc.jsonResp(w, http.StatusCreated, map[string]any{"success": true, "msg": "Your review was submitted!"})
@@ -304,4 +304,25 @@ func (oc *OrderController) GetItemsByCategoryID(w http.ResponseWriter, r *http.R
 	}
 
 	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Items fetched successfully", "items": items, "category": category})
+}
+
+func (oc *OrderController) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	itemID, err := strconv.Atoi(vars["item_id"])
+	if err != nil {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid item ID"})
+		return
+	}
+
+	item, err := models.GetItemByID(itemID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			oc.jsonResp(w, http.StatusNotFound, map[string]any{"success": false, "msg": "Item not found"})
+			return
+		}
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch item"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Item fetched successfully", "item": item})
 }

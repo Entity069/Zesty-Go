@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -14,6 +15,12 @@ type Item struct {
 	Status      string    `json:"status"`
 	Image       string    `json:"image"`
 	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	// this fields are for extra fields for some endpoints
+	SellerFirstName string  `json:"seller_fname"`
+	SellerLastName  string  `json:"seller_lname"`
+	CategoryName    string  `json:"cname"`
+	Rating          float64 `json:"rating"`
 }
 
 func (i *Item) Create() error {
@@ -66,7 +73,7 @@ func GetAllItems() ([]*Item, error) {
 		item := &Item{}
 		var categoryName string
 		var rating float64
-		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &categoryName, &rating)
+		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &item.UpdatedAt, &categoryName, &rating)
 		if err != nil {
 			return nil, err
 		}
@@ -77,9 +84,51 @@ func GetAllItems() ([]*Item, error) {
 
 func GetItemByID(id int) (*Item, error) {
 	item := &Item{}
-	query := `SELECT id, seller_id, name, description, price, category_id, status, image, created_at FROM items WHERE id = ?`
-	err := DB.QueryRow(query, id).Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price, &item.CategoryID, &item.Status, &item.Image, &item.CreatedAt)
+	query := `
+		SELECT
+			i.id		  		AS id,
+			i.seller_id  		AS sid,
+			i.name       		AS name,
+			i.image     		AS image,
+			i.description 		AS description,
+			i.price     		AS price,
+			i.category_id 		AS cid,
+			i.status     		AS status,
+			i.created_at 		AS created_at,
+			i.updated_at 		AS updated_at,
+			u.first_name 		AS fname,
+			u.last_name  		AS lname,
+			c.name      		AS cname,
+			ROUND(COALESCE(AVG(r.rating), 0), 1) AS rating
+		FROM items i
+		INNER JOIN users      u ON i.seller_id   = u.id
+		INNER JOIN categories c ON i.category_id = c.id
+		LEFT  JOIN reviews    r ON r.item_id     = i.id
+		WHERE i.id = ?
+		GROUP BY
+			i.id, i.seller_id, i.name, i.image, i.description, i.price, i.category_id, i.status, i.created_at, i.updated_at,
+			u.first_name, u.last_name,
+			c.name
+    `
+
+	err := DB.QueryRow(query, id).Scan(
+		&item.ID,
+		&item.SellerID,
+		&item.Name,
+		&item.Image,
+		&item.Description,
+		&item.Price,
+		&item.CategoryID,
+		&item.Status,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.SellerFirstName,
+		&item.SellerLastName,
+		&item.CategoryName,
+		&item.Rating,
+	)
 	if err != nil {
+		fmt.Println("Error fetching item by ID:", err)
 		return nil, err
 	}
 	return item, nil
@@ -109,7 +158,7 @@ func GetItemsBySellerID(sellerID int) ([]*Item, error) {
 		var categoryName string
 		var rating float64
 		err := rows.Scan(&item.ID, &item.SellerID, &item.Name, &item.Description, &item.Price,
-			&item.CategoryID, &item.Status, &item.Image, &item.CreatedAt,
+			&item.CategoryID, &item.Status, &item.Image, &item.CreatedAt, &item.UpdatedAt,
 			&categoryName, &rating)
 		if err != nil {
 			return nil, err
