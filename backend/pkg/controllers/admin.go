@@ -73,7 +73,7 @@ func (ac *AdminController) UpdateUserByAdmin(w http.ResponseWriter, r *http.Requ
 }
 
 func (ac *AdminController) AllCategories(w http.ResponseWriter, r *http.Request) {
-	categories, err := models.GetAllCategories()
+	categories, err := models.GetAllCategories(0)
 	if err != nil {
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch categories"})
 		return
@@ -138,7 +138,7 @@ func (ac *AdminController) EditCategory(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ac *AdminController) AllItems(w http.ResponseWriter, _ *http.Request) {
-	items, err := models.GetAllItems()
+	items, err := models.GetAllItems(0)
 	if err != nil {
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
 		return

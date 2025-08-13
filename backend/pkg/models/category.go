@@ -74,10 +74,16 @@ func GetCategoryByName(name string) (*Category, error) {
 	return category, nil
 }
 
-func GetAllCategories() ([]*Category, error) {
+func GetAllCategories(limit int) ([]*Category, error) {
 	query := `SELECT id, name, description FROM categories ORDER BY name`
 
-	rows, err := DB.Query(query)
+	args := []any{}
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

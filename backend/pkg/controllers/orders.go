@@ -130,7 +130,17 @@ func (oc *OrderController) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Your order was cancelled. But you won't be refunded."})
+	user, err := models.GetUserByID(order.UserID)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Internal server error!"})
+		return
+	}
+
+	if err := user.UpdateBalance(user.Balance + order.TotalAmount); err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to refund"})
+		return
+	}
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Your order was cancelled. AND you WILL be refunded."})
 }
 
 func (oc *OrderController) GetUserOrders(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +152,7 @@ func (oc *OrderController) GetUserOrders(w http.ResponseWriter, r *http.Request)
 
 	userID := claims.ID
 
-	orders, err := models.GetOrdersByUserID(userID)
+	orders, err := models.GetOrdersByUserID(userID, 0)
 	if err != nil {
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch orders"})
 		return
@@ -217,6 +227,15 @@ func (oc *OrderController) UpdateOrderItemCount(w http.ResponseWriter, r *http.R
 	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true})
 }
 
+func (ac *OrderController) GetAllItems(w http.ResponseWriter, _ *http.Request) {
+	items, err := models.GetAllItems(0)
+	if err != nil {
+		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
+		return
+	}
+	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "All items fetched successfully.", "items": items})
+}
+
 func (oc *OrderController) RateItem(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserClaims(r)
 	if !ok {
@@ -274,7 +293,7 @@ func (oc *OrderController) DeliverOrder(w http.ResponseWriter, r *http.Request) 
 }
 
 func (oc *OrderController) GetAllCategories(w http.ResponseWriter, r *http.Request) {
-	categories, err := models.GetAllCategories()
+	categories, err := models.GetAllCategories(0)
 	if err != nil {
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch categories"})
 		return
@@ -325,4 +344,47 @@ func (oc *OrderController) GetItemByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Item fetched successfully", "item": item})
+}
+
+func (oc *OrderController) HomePageItems(w http.ResponseWriter, r *http.Request) {
+	_, ok := middleware.GetUserClaims(r)
+	if !ok {
+		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+
+	items, err := models.GetAllItems(3)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch items"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Homepage items fetched successfully", "items": items})
+}
+
+func (oc *OrderController) HomePageOrders(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r)
+	if !ok {
+		oc.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+
+	userID := claims.ID
+	orders, err := models.GetOrdersByUserID(userID, 3)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch orders"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Homepage orders fetched successfully", "orders": orders})
+}
+
+func (oc *OrderController) HomePageCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := models.GetAllCategories(6)
+	if err != nil {
+		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch categories"})
+		return
+	}
+
+	oc.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "All categories fetched successfully.", "categories": categories})
 }

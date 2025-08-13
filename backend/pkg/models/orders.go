@@ -69,20 +69,37 @@ func (o *Order) Cancel() error {
 }
 
 func GetOrderByID(id int) (*Order, error) {
-	order := &Order{}
-	query := `SELECT id, user_id, status, message, created_at, updated_at FROM orders WHERE id = ?`
-
-	err := DB.QueryRow(query, id).Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return order, nil
-}
-
-func GetOrdersByUserID(userID int) ([]*Order, error) {
-	query := `SELECT id, user_id, status, message, created_at, updated_at FROM orders WHERE user_id = ? ORDER BY created_at DESC`
-
-	rows, err := DB.Query(query, userID)
+	query := `
+			SELECT
+			o.id            AS order_id,
+			o.user_id       AS user_id,
+			o.status        AS status,
+			o.message       AS message,
+			o.created_at    AS created_at,
+			o.updated_at    AS updated_at,
+			COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_amount,
+			CASE 
+				WHEN COUNT(oi.id) > 0 THEN
+					JSON_ARRAYAGG(
+						JSON_OBJECT(
+							'id',         oi.id,
+							'order_id',   oi.order_id,
+							'name',    	  i.name,
+							'quantity',   oi.quantity,
+							'unit_price', oi.unit_price,
+							'status',     oi.status
+						)
+					)
+				ELSE JSON_ARRAY()
+			END AS items_json
+		FROM orders o
+		LEFT JOIN order_items oi ON oi.order_id = o.id
+		LEFT JOIN items i        ON i.id        = oi.item_id
+		WHERE o.id = ? AND o.status <> 'cart'
+		GROUP BY o.id, o.user_id, o.status, o.message, o.created_at, o.updated_at
+		ORDER BY o.created_at DESC
+		LIMIT 1`
+	rows, err := DB.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +108,87 @@ func GetOrdersByUserID(userID int) ([]*Order, error) {
 	var orders []*Order
 	for rows.Next() {
 		order := &Order{}
-		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt)
+		var itemsJSON *string
+		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt, &order.TotalAmount, &itemsJSON)
 		if err != nil {
 			return nil, err
 		}
+		if itemsJSON != nil && *itemsJSON != "" && *itemsJSON != "null" {
+			if err := json.Unmarshal([]byte(*itemsJSON), &order.Items); err != nil {
+				return nil, err
+			}
+		} else {
+			order.Items = []OrderItem{}
+		}
 		orders = append(orders, order)
+	}
+	if len(orders) == 0 {
+		return nil, nil
+	}
+	return orders[0], nil
+}
+
+func GetOrdersByUserID(userID int, limit int) ([]*Order, error) {
+	query := `
+			SELECT
+			o.id            AS order_id,
+			o.user_id       AS user_id,
+			o.status        AS status,
+			o.message       AS message,
+			o.created_at    AS created_at,
+			o.updated_at    AS updated_at,
+			COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_amount,
+			CASE 
+				WHEN COUNT(oi.id) > 0 THEN
+					JSON_ARRAYAGG(
+						JSON_OBJECT(
+							'id',         oi.id,
+							'order_id',   oi.order_id,
+							'name',    	  i.name,
+							'quantity',   oi.quantity,
+							'unit_price', oi.unit_price,
+							'status',     oi.status
+						)
+					)
+				ELSE JSON_ARRAY()
+			END AS items_json
+		FROM orders o
+		LEFT JOIN order_items oi ON oi.order_id = o.id
+		LEFT JOIN items i        ON i.id        = oi.item_id
+		WHERE o.user_id = ? AND o.status <> 'cart'
+		GROUP BY o.id, o.user_id, o.status, o.message, o.created_at, o.updated_at
+		ORDER BY o.created_at DESC`
+
+	args := []any{}
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+	rows, err := DB.Query(query, append([]any{userID}, args...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*Order
+	for rows.Next() {
+		order := &Order{}
+		var itemsJSON *string
+		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt, &order.TotalAmount, &itemsJSON)
+		if err != nil {
+			return nil, err
+		}
+		if itemsJSON != nil && *itemsJSON != "" && *itemsJSON != "null" {
+			if err := json.Unmarshal([]byte(*itemsJSON), &order.Items); err != nil {
+				return nil, err
+			}
+		} else {
+			order.Items = []OrderItem{}
+		}
+		orders = append(orders, order)
+	}
+	if orders == nil {
+		orders = []*Order{}
 	}
 	return orders, nil
 }
@@ -276,10 +369,11 @@ func SyncStatus(orderID int) error {
 }
 
 func CalculateCartTotal(cartID int) (float64, error) {
-	query := `SELECT SUM(oi.price * oi.count) FROM order_items oi WHERE oi.order_id = ?`
+	query := `SELECT SUM(oi.unit_price * oi.quantity) FROM order_items oi WHERE oi.order_id = ?`
 	var total float64
 	err := DB.QueryRow(query, cartID).Scan(&total)
 	if err != nil {
+		fmt.Println("Error calculating cart total:", err)
 		return 0, err
 	}
 	return total, nil

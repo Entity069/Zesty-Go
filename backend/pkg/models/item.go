@@ -51,7 +51,7 @@ func (i *Item) Delete() error {
 	return err
 }
 
-func GetAllItems() ([]*Item, error) {
+func GetAllItems(limit int) ([]*Item, error) {
 	query := `
 	SELECT 
 		i.id, i.seller_id, i.name, i.description, i.price, i.category_id, i.status, i.image, i.created_at, i.updated_at,
@@ -62,7 +62,15 @@ func GetAllItems() ([]*Item, error) {
 	LEFT JOIN reviews r ON r.item_id = i.id
 	GROUP BY i.id
 	`
-	rows, err := DB.Query(query)
+
+	args := []any{}
+
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package models
 type OrderItem struct {
 	ID        int     `json:"id"`
 	OrderID   int     `json:"order_id"`
+	Name      string  `json:"name,omitempty"` // for some order endpoints
 	ItemID    int     `json:"item_id"`
 	Quantity  int     `json:"quantity"`
 	UnitPrice float64 `json:"unit_price"`
