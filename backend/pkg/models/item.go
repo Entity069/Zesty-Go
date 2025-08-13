@@ -183,7 +183,7 @@ func GetSellerRevenue(sellerID int) (float64, error) {
     FROM order_items oi
     JOIN items i ON oi.item_id = i.id
     JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status != 'cart'
+    WHERE i.seller_id = ? AND o.status <> 'cart'
     `
 	err := DB.QueryRow(query, sellerID).Scan(&revenue)
 	return revenue, err
@@ -203,7 +203,7 @@ func GetSellerOrderCount(sellerID int) (int, error) {
     FROM order_items oi
     JOIN items i ON oi.item_id = i.id
     JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status != 'cart'
+    WHERE i.seller_id = ? AND o.status <> 'cart'
     `
 	err := DB.QueryRow(query, sellerID).Scan(&count)
 	return count, err
@@ -216,7 +216,7 @@ func GetSellerCustomerCount(sellerID int) (int, error) {
     FROM order_items oi
     JOIN items i ON oi.item_id = i.id
     JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status != 'cart'
+    WHERE i.seller_id = ? AND o.status <> 'cart'
     `
 	err := DB.QueryRow(query, sellerID).Scan(&count)
 	return count, err

@@ -16,6 +16,11 @@ type Order struct {
 	UpdatedAt   time.Time   `json:"updated_at"`
 	TotalAmount float64     `json:"total_amount"`
 	Items       []OrderItem `json:"items"`
+	// extra fields for some endpoints
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Address   string `json:"address"`
 }
 
 func (o *Order) Create() error {
@@ -178,6 +183,77 @@ func GetOrdersByUserID(userID int, limit int) ([]*Order, error) {
 		if err != nil {
 			return nil, err
 		}
+		if itemsJSON != nil && *itemsJSON != "" && *itemsJSON != "null" {
+			if err := json.Unmarshal([]byte(*itemsJSON), &order.Items); err != nil {
+				return nil, err
+			}
+		} else {
+			order.Items = []OrderItem{}
+		}
+		orders = append(orders, order)
+	}
+	if orders == nil {
+		orders = []*Order{}
+	}
+	return orders, nil
+}
+
+func GetOrdersBySellerID(sellerID int, limit int) ([]*Order, error) {
+	query := `
+		SELECT
+		o.id               AS id,
+		o.created_at       AS created_at,
+		o.status           AS status,
+		o.message          AS message,
+		SUM(oi.quantity * oi.unit_price) AS total_amount,
+		c.id               AS cid,
+		c.first_name       AS cfname,
+		c.last_name        AS clname,
+		c.email            AS cemail,
+		c.address          AS caddr,
+		JSON_ARRAYAGG(
+			JSON_OBJECT(
+			'id',           oi.id,
+			'item_id',      oi.item_id,
+			'name',         i.name,
+			'quantity',     oi.quantity,
+			'unit_price',   oi.unit_price,
+			'status',       COALESCE(oi.status, 'ordered'),
+			'item_status',  COALESCE(oi.status, 'ordered'),
+			'image',        COALESCE(i.image, '')
+			)
+		) AS my_items
+		FROM orders AS o
+		JOIN order_items AS oi ON oi.order_id = o.id
+		JOIN items AS i  ON i.id = oi.item_id
+		JOIN users AS c ON c.id = o.user_id
+		WHERE i.seller_id = ? AND o.status <> 'cancelled' AND o.status <> 'cart'
+		GROUP BY o.id, o.created_at, o.status, o.message, c.id, c.first_name, c.last_name, c.email, c.address
+		ORDER BY o.created_at DESC`
+
+	args := []any{}
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+	rows, err := DB.Query(query, append([]any{sellerID}, args...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*Order
+	for rows.Next() {
+		order := &Order{}
+		var itemsJSON *string
+
+		err := rows.Scan(&order.ID, &order.CreatedAt, &order.Status, &order.Message,
+			&order.TotalAmount,
+			&order.UserID, &order.FirstName, &order.LastName, &order.Email, &order.Address, &itemsJSON)
+		if err != nil {
+			return nil, err
+		}
+
 		if itemsJSON != nil && *itemsJSON != "" && *itemsJSON != "null" {
 			if err := json.Unmarshal([]byte(*itemsJSON), &order.Items); err != nil {
 				return nil, err

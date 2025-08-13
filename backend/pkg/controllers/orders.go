@@ -74,6 +74,19 @@ func (oc *OrderController) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// change status to "ordered" of all order_items in the cart
+	if len(cart.Items) == 0 {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Your cart is empty"})
+		return
+	}
+
+	for _, item := range cart.Items {
+		if err := item.UpdateStatus("ordered"); err != nil {
+			oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to update item status"})
+			return
+		}
+	}
+
 	total, err := models.CalculateCartTotal(cart.ID)
 	if err != nil {
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to calculate total"})

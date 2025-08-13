@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 
@@ -11,6 +12,9 @@ import (
 
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
+
+	uploadsDir := filepath.Join(".", "uploads")
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
 
 	authController := controllers.NewAuthController()
 	adminController := controllers.NewAdminController()
@@ -64,11 +68,15 @@ func NewRouter() *mux.Router {
 
 	sellerSubroute := r.PathPrefix("/api/seller").Subrouter()
 	sellerSubroute.Use(middleware.VerifyToken, middleware.LoginRequired, middleware.SellerRequired)
+	sellerSubroute.HandleFunc("/stats", sellerController.GetSellerStats).Methods(http.MethodGet)
 	sellerSubroute.HandleFunc("/all-items", sellerController.GetSellerItems).Methods(http.MethodGet)
 	sellerSubroute.HandleFunc("/current-orders", sellerController.GetSellerOrders).Methods(http.MethodGet)
 	sellerSubroute.HandleFunc("/add-item", sellerController.AddItem).Methods(http.MethodPost)
-	sellerSubroute.HandleFunc("/edit-item", sellerController.UpdateItem).Methods(http.MethodPost)
-	sellerSubroute.HandleFunc("/current-orders/update", sellerController.UpdateItemStatus).Methods(http.MethodPost)
+	sellerSubroute.HandleFunc("/edit-item/{sitem_id}", sellerController.UpdateItem).Methods(http.MethodPost)
+	sellerSubroute.HandleFunc("/update-orders", sellerController.UpdateOrderItemStatus).Methods(http.MethodPost)
+
+	sellerSubroute.HandleFunc("/all-categories", orderController.GetAllCategories).Methods(http.MethodGet)
+	sellerSubroute.HandleFunc("/item/{item_id}", orderController.GetItemByID).Methods(http.MethodGet)
 
 	return r
 }

@@ -15,7 +15,6 @@ const SellerSidebar = ({ show, onHide }) => {
     { path: "/seller/dashboard", icon: "fas fa-tachometer-alt", label: "Dashboard", key: "dashboard" },
     { path: "/seller/add-items", icon: "fas fa-plus-circle", label: "Add Items", key: "add-items" },
     { path: "/seller/manage-items", icon: "fas fa-edit", label: "Manage Items", key: "manage-items" },
-    { path: "/seller/edit-items", icon: "fas fa-pencil-alt", label: "Edit Items", key: "edit-items" },
     { path: "/my-profile", icon: "fas fa-user", label: "Profile", key: "profile" }
   ]
 
