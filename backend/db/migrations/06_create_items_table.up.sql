@@ -10,6 +10,7 @@ CREATE TABLE `items` (
   `category_id` INT NOT NULL,
   `status` ENUM('available', 'unavailable', 'discontinued') NOT NULL DEFAULT 'available',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`seller_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
