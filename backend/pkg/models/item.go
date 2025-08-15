@@ -176,52 +176,6 @@ func GetItemsBySellerID(sellerID int) ([]*Item, error) {
 	return items, nil
 }
 
-func GetSellerRevenue(sellerID int) (float64, error) {
-	var revenue float64
-	query := `
-    SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS revenue
-    FROM order_items oi
-    JOIN items i ON oi.item_id = i.id
-    JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status <> 'cart'
-    `
-	err := DB.QueryRow(query, sellerID).Scan(&revenue)
-	return revenue, err
-}
-
-func GetSellerItemCount(sellerID int) (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM items WHERE seller_id = ?`
-	err := DB.QueryRow(query, sellerID).Scan(&count)
-	return count, err
-}
-
-func GetSellerOrderCount(sellerID int) (int, error) {
-	var count int
-	query := `
-    SELECT COUNT(DISTINCT o.id) AS orders
-    FROM order_items oi
-    JOIN items i ON oi.item_id = i.id
-    JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status <> 'cart'
-    `
-	err := DB.QueryRow(query, sellerID).Scan(&count)
-	return count, err
-}
-
-func GetSellerCustomerCount(sellerID int) (int, error) {
-	var count int
-	query := `
-    SELECT COUNT(DISTINCT o.user_id) AS customers
-    FROM order_items oi
-    JOIN items i ON oi.item_id = i.id
-    JOIN orders o ON oi.order_id = o.id
-    WHERE i.seller_id = ? AND o.status <> 'cart'
-    `
-	err := DB.QueryRow(query, sellerID).Scan(&count)
-	return count, err
-}
-
 func IncrementCartItem(orderID, itemID, delta int) error {
 	_, err := DB.Exec(`INSERT INTO order_items (order_id, item_id, quantity, unit_price)
 		VALUES (?, ?, ?, (SELECT price FROM items WHERE id = ?))

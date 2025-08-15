@@ -291,7 +291,24 @@ func GetOrdersByStatus(status string) ([]*Order, error) {
 }
 
 func GetAllOrders() ([]*Order, error) {
-	query := `SELECT id, user_id, status, message, created_at, updated_at FROM orders ORDER BY created_at DESC`
+	query := `
+	SELECT 
+		o.id 			AS id,
+		o.user_id 		AS user_id,
+		o.status 		AS status,
+		o.message 		AS message,
+		o.created_at 	AS created_at,
+		o.updated_at 	AS updated_at,
+		u.first_name 	AS first_name,
+		u.last_name 	AS last_name,
+		u.email 		AS email,
+		u.address 		AS address,
+		COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_amount
+	FROM orders o
+	LEFT JOIN users u ON u.id = o.user_id
+	LEFT JOIN order_items oi ON oi.order_id = o.id
+	GROUP BY o.id, u.first_name, u.last_name, u.email, u.address
+	ORDER BY o.created_at DESC`
 
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -302,7 +319,7 @@ func GetAllOrders() ([]*Order, error) {
 	var orders []*Order
 	for rows.Next() {
 		order := &Order{}
-		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt)
+		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt, &order.FirstName, &order.LastName, &order.Email, &order.Address, &order.TotalAmount)
 		if err != nil {
 			return nil, err
 		}

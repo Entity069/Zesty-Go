@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/Entity069/Zesty-Go/pkg/middleware"
 	"github.com/Entity069/Zesty-Go/pkg/models"
 )
 
@@ -22,6 +24,7 @@ func (ac *AdminController) jsonResp(w http.ResponseWriter, status int, payload a
 func (ac *AdminController) AllOrders(w http.ResponseWriter, r *http.Request) {
 	orders, err := models.GetAllOrders()
 	if err != nil {
+		fmt.Println("Error fetching orders:", err)
 		ac.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed to fetch orders"})
 		return
 	}
@@ -104,7 +107,7 @@ func (ac *AdminController) AddCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Category added successfully."})
+	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Category added successfully.", "category": category})
 }
 
 func (ac *AdminController) EditCategory(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +155,7 @@ func (ac *AdminController) UpdateItemStatus(w http.ResponseWriter, r *http.Reque
 		Status string `json:"status"`
 	}
 	var body reqBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ItemID == 0 || body.Status == "" {
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Bad json data"})
 		return
 	}
@@ -167,4 +170,35 @@ func (ac *AdminController) UpdateItemStatus(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Item status updated successfully."})
+}
+
+func (ac *AdminController) GetAdminStats(w http.ResponseWriter, r *http.Request) {
+	_, ok := middleware.GetUserClaims(r)
+	if !ok {
+		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Unauthorized"})
+		return
+	}
+
+	revenue, _ := models.GetTotalRevenue()
+	orders, _ := models.GetTotalOrders()
+	users, _ := models.GetTotalCustomers()
+	sellers, _ := models.GetTotalSellers()
+
+	items, _ := models.GetTotalItems()
+	categories, _ := models.GetTotalCategories()
+	pending, _ := models.GetPendingOrdersCount()
+	reviews, _ := models.GetTotalReviews()
+
+	stats := map[string]any{
+		"revenue":    revenue,
+		"orders":     orders,
+		"users":      users,
+		"sellers":    sellers,
+		"items":      items,
+		"categories": categories,
+		"pending":    pending,
+		"reviews":    reviews,
+	}
+
+	ac.jsonResp(w, http.StatusOK, map[string]any{"success": true, "msg": "Admin stats fetched successfully.", "data": stats})
 }
