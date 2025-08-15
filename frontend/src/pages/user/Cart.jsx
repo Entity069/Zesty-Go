@@ -41,17 +41,35 @@ const Cart = () => {
 
   const updateQuantity = async (itemId, action) => {
     try {
-      setCartItems((prevItems) =>
-        prevItems
-          .map((item) => {
-            if (item.id === itemId) {
-              const newQuantity = action === "increase" ? item.quantity + 1 : item.quantity - 1
-              return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
-            }
-            return item
-          })
-          .filter(Boolean),
-      )
+      const response = await fetch("/api/order/update-count", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ itemId, action }),
+      })
+
+      if (!response.ok) {
+        showError("Update Failed", "Could not update item quantity")
+        return
+      }
+      const data = await response.json()
+      if (data.success) {
+        setCartItems((prevItems) =>
+          prevItems
+            .map((item) => {
+              if (item.id === itemId) {
+                const newQuantity = action === "increase" ? item.quantity + 1 : item.quantity - 1
+                return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
+              }
+              return item
+            })
+            .filter(Boolean),
+        )
+      } else {
+        showError("Update Failed", data.msg)
+      }
     } catch (error) {
       showError("Update Failed", "Could not update quantity")
     }
