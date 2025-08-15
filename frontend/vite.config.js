@@ -8,7 +8,12 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://backend:3001',
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      },
+      '/uploads': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false
       }
