@@ -29,7 +29,7 @@ func (uc *UserController) jsonResp(w http.ResponseWriter, status int, payload an
 }
 
 func (uc *UserController) saveProfilePic(file multipart.File, header *multipart.FileHeader) (string, error) {
-	uploadsDir := filepath.Join(".", "uploads", "user")
+	uploadsDir := filepath.Join(".", "uploads", "profile-pics")
 	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %v", err)
 	}
@@ -61,7 +61,7 @@ func (uc *UserController) saveProfilePic(file multipart.File, header *multipart.
 		return "", fmt.Errorf("failed to save file: %v", err)
 	}
 
-	return "/uploads/user/" + filename, nil
+	return "/uploads/profile-pics/" + filename, nil
 }
 
 func (uc *UserController) UpdateUserAddress(w http.ResponseWriter, r *http.Request) {

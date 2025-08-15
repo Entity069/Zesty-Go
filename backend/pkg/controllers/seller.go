@@ -29,7 +29,7 @@ func (sc *SellerController) jsonResp(w http.ResponseWriter, status int, payload 
 }
 
 func (sc *SellerController) saveUploadedFile(file multipart.File, header *multipart.FileHeader) (string, error) {
-	uploadsDir := filepath.Join(".", "uploads", "items")
+	uploadsDir := filepath.Join(".", "uploads", "item-images")
 	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %v", err)
 	}
@@ -61,7 +61,7 @@ func (sc *SellerController) saveUploadedFile(file multipart.File, header *multip
 		return "", fmt.Errorf("failed to save file: %v", err)
 	}
 
-	return "/uploads/items/" + filename, nil
+	return "/uploads/item-images/" + filename, nil
 }
 
 func (sc *SellerController) AddItem(w http.ResponseWriter, r *http.Request) {
