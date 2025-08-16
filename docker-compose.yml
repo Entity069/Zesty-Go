@@ -1,19 +1,25 @@
 services:
 
   db:
-    image: mysql:9.3
+    image: mysql:8.0
     container_name: zesty-db
     restart: unless-stopped
     env_file:
       - .env
     volumes:
       - db-data:/var/lib/mysql
-      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
-      # - ./backend/db/seeds:/docker-entrypoint-initdb.d:ro
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./backend/db/seeds:/docker-entrypoint-initdb.d/seeds:ro
     ports:
       - "3306:3306"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   backend:
     build:
@@ -25,7 +31,8 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
