@@ -8,8 +8,6 @@ services:
       - .env
     volumes:
       - db-data:/var/lib/mysql
-      - ./backend/db/migrations:/docker-entrypoint-initdb.d/migrations:ro
-      - ./backend/db/seeds:/docker-entrypoint-initdb.d/seeds:ro
     ports:
       - "3306:3306"
     networks:

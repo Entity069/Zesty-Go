@@ -6,7 +6,7 @@ This benchmarking is done to check efficiency of several API routes
 
 - Clone repo and install project related dependencies
 
-- Install Apache Testbench
+- Install Apache Bench
 ```bash
 sudo apt install && sudo apt install apache2-utils
 ```
