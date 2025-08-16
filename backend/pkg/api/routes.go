@@ -68,6 +68,9 @@ func NewRouter() *mux.Router {
 	adminSubroute.HandleFunc("/all-items", adminController.AllItems).Methods(http.MethodGet)
 	adminSubroute.HandleFunc("/update-item", adminController.UpdateItemStatus).Methods(http.MethodPost)
 
+	adminSubroute.HandleFunc("/cancel-order", orderController.CancelOrder).Methods(http.MethodPost)
+	adminSubroute.HandleFunc("/deliver-order", orderController.DeliverOrder).Methods(http.MethodPost)
+
 	sellerSubroute := r.PathPrefix("/api/seller").Subrouter()
 	sellerSubroute.Use(middleware.VerifyToken, middleware.LoginRequired, middleware.SellerRequired)
 	sellerSubroute.HandleFunc("/stats", sellerController.GetSellerStats).Methods(http.MethodGet)

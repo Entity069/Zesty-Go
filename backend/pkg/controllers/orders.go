@@ -297,6 +297,11 @@ func (oc *OrderController) DeliverOrder(w http.ResponseWriter, r *http.Request) 
 		oc.jsonResp(w, http.StatusNotFound, map[string]any{"success": false, "msg": "Order not found"})
 		return
 	}
+
+	if order.Status != "prepared" {
+		oc.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "This order is not prepared yet!"})
+		return
+	}
 	if err := order.UpdateStatus("delivered"); err != nil {
 		oc.jsonResp(w, http.StatusInternalServerError, map[string]any{"success": false, "msg": "Failed"})
 		return

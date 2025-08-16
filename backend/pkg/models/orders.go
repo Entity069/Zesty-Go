@@ -269,27 +269,6 @@ func GetOrdersBySellerID(sellerID int, limit int) ([]*Order, error) {
 	return orders, nil
 }
 
-func GetOrdersByStatus(status string) ([]*Order, error) {
-	query := `SELECT id, user_id, status, message, created_at, updated_at FROM orders WHERE status = ? ORDER BY created_at DESC`
-
-	rows, err := DB.Query(query, status)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var orders []*Order
-	for rows.Next() {
-		order := &Order{}
-		err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.Message, &order.CreatedAt, &order.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		orders = append(orders, order)
-	}
-	return orders, nil
-}
-
 func GetAllOrders() ([]*Order, error) {
 	query := `
 	SELECT 
@@ -307,7 +286,8 @@ func GetAllOrders() ([]*Order, error) {
 	FROM orders o
 	LEFT JOIN users u ON u.id = o.user_id
 	LEFT JOIN order_items oi ON oi.order_id = o.id
-	GROUP BY o.id, u.first_name, u.last_name, u.email, u.address
+	WHERE o.status <> 'cart'
+	GROUP BY o.id, u.first_name, u.last_name, u.email, u.address, o.status
 	ORDER BY o.created_at DESC`
 
 	rows, err := DB.Query(query)
@@ -324,6 +304,9 @@ func GetAllOrders() ([]*Order, error) {
 			return nil, err
 		}
 		orders = append(orders, order)
+	}
+	if orders == nil {
+		orders = []*Order{}
 	}
 	return orders, nil
 }

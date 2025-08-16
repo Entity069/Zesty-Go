@@ -130,28 +130,3 @@ func GetAllUsers() ([]*User, error) {
 	}
 	return users, nil
 }
-
-func GetUsersByType(userType string) ([]*User, error) {
-	query := `SELECT id, profile_pic, first_name, last_name, user_type, password, email, address, balance, is_verified, created_at, updated_at FROM users WHERE user_type = ? ORDER BY created_at DESC`
-
-	rows, err := DB.Query(query, userType)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var users []*User
-	for rows.Next() {
-		user := &User{}
-		err := rows.Scan(
-			&user.ID, &user.ProfilePic, &user.FirstName, &user.LastName, &user.UserType,
-			&user.Password, &user.Email, &user.Address, &user.Balance, &user.IsVerified,
-			&user.CreatedAt, &user.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	return users, nil
-}

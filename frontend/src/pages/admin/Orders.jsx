@@ -70,7 +70,25 @@ const AdminOrders = () => {
 
   const handleDeliverOrder = async (orderId) => {
     try {
-      // Mock API call - you should replace this with actual API call
+      const response = await fetch("/api/admin/deliver-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId }),
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        showError("Error", "Failed to deliver order")
+        return
+      }
+      const data = await response.json()
+      if (!data.success) {
+        showError("Error", data.msg)
+        return
+      }
+      showSuccess("Order Delivered", data.msg)
       const updatedOrders = orders.map((order) =>
         order.id === orderId ? { ...order, status: "delivered" } : order,
       )
@@ -84,7 +102,24 @@ const AdminOrders = () => {
 
   const handleCancelOrder = async (orderId) => {
     try {
-      // Mock API call - you should replace this with actual API call
+      const response = await fetch("/api/admin/cancel-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId }),
+        credentials: "include",
+      })
+      if (!response.ok) {
+        showError("Error", "Failed to cancel order")
+        return
+      }
+      const data = await response.json()
+      if (!data.success) {
+        showError("Error", data.msg)
+        return
+      }
+      showSuccess("Order Cancelled", data.msg)
       const updatedOrders = orders.map((order) =>
         order.id === orderId ? { ...order, status: "cancelled" } : order,
       )
@@ -149,9 +184,9 @@ const AdminOrders = () => {
                         <td>ORD-{order.id}</td>
                         <td>
                           <div>
-                            {order.first_name || 'N/A'} {order.last_name || ''}
+                            {order.first_name} {order.last_name}
                           </div>
-                          <small className="text-muted">{order.email || 'N/A'}</small>
+                          <small className="text-muted">{order.email}</small>
                         </td>
                         <td>₹{intcomma(order.total_amount || 0)}</td>
                         <td>
@@ -166,7 +201,7 @@ const AdminOrders = () => {
                               variant="outline-success"
                               size="sm"
                               onClick={() => handleDeliverOrder(order.id)}
-                              disabled={order.status !== "preparing"}
+                              disabled={order.status !== "prepared"}
                             >
                               Deliver
                             </Button>
