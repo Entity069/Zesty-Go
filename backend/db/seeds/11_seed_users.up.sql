@@ -1,7 +1,6 @@
 USE `zestydb`;
 
 INSERT INTO `users` (`id`,`profile_pic`,`first_name`,`last_name`,`user_type`,`password`,`email`,`address`,`balance`,`is_verified`,`created_at`,`updated_at`) VALUES
-  (1,'https://s3.tebi.io/zesty-test/80216737.jpeg','Zesty','Admin','admin','$2a$10$yzvG7a2QpO59OTMcxXJRzOAfymhiFUC8xqLYD4FfeumuYWVKMzEUa','admin@zes.ty','1467 Cedar Court, Dallas, NY 49522',200.00,1,'2025-07-04 21:59:49','2025-07-05 03:15:12'),
   (2,'https://s3.tebi.io/zesty-test/80216737.jpeg','John','Doe','user','$2a$10$yzvG7a2QpO59OTMcxXJRzOAfymhiFUC8xqLYD4FfeumuYWVKMzEUa','john.doe@user.com','123 Elm St, Springfield',200.00,1,'2025-07-05 01:33:08','2025-07-05 01:33:08'),
   (3,'https://s3.tebi.io/zesty-test/80216737.jpeg','Jane','Smith','user','$2a$10$yzvG7a2QpO59OTMcxXJRzOAfymhiFUC8xqLYD4FfeumuYWVKMzEUa','jane.smith@user.com','456 Oak Ave, Metropolis',200.00,0,'2025-07-05 01:33:08','2025-07-05 01:33:08'),
   (4,'https://s3.tebi.io/zesty-test/80216737.jpeg','Emily','Davis','user','$2a$10$yzvG7a2QpO59OTMcxXJRzOAfymhiFUC8xqLYD4FfeumuYWVKMzEUa','emily.davis@user.com','789 Maple Rd, Gotham',200.00,1,'2025-07-05 01:33:08','2025-07-05 01:33:08'),
