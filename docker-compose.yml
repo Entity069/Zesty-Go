@@ -9,23 +9,11 @@ services:
     volumes:
       - db-data:/var/lib/mysql
       - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+      # - ./backend/db/seeds:/docker-entrypoint-initdb.d:ro
     ports:
       - "3306:3306"
     networks:
       - app-network
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: zesty-frontend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
 
   backend:
     build:
