@@ -69,3 +69,11 @@ func SiteName() string {
 	}
 	return site
 }
+
+func FrontendUrl() string {
+	site := getEnv("FRONTEND_URL", "https://localhost:3000")
+	if site == "" {
+		panic("FRONTEND_URL environment variable is not set!")
+	}
+	return site
+}

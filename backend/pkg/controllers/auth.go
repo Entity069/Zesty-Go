@@ -85,7 +85,7 @@ func (ac *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, _ := token.SignedString(config.JWTSecret())
 
-	activationURL := fmt.Sprintf("http://%s/api/auth/verify?token=%s", config.SiteName(), tokenString)
+	activationURL := fmt.Sprintf("http://%s/api/auth/verify?token=%s", config.FrontendUrl(), tokenString)
 
 	emailData := map[string]string{"activation_url": activationURL}
 	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/email/confirm.html", emailData); err != nil {
@@ -296,7 +296,7 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 	})
 	tokenString, _ := token.SignedString(key)
 
-	resetURL := fmt.Sprintf("http://%s/reset-password?token=%s", config.SiteName(), tokenString)
+	resetURL := fmt.Sprintf("http://%s/reset-password?token=%s", config.FrontendUrl(), tokenString)
 	emailData := map[string]string{"reset_url": resetURL}
 
 	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/email/forgot.html", emailData); err != nil {
