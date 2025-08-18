@@ -26,21 +26,22 @@ func (ac *AuthController) jsonResp(w http.ResponseWriter, status int, payload an
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
-func (ac *AuthController) getEmailFromJWT(tokenStr string) (string, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
-		return config.JWTSecret(), nil
-	})
+func (ac *AuthController) GetEmailFromJwt(tokenStr string) (string, error) {
+	token, _, err := jwt.NewParser().ParseUnverified(tokenStr, jwt.MapClaims{})
 	if err != nil {
+		fmt.Println("Error 1:", err)
 		return "", err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
+		fmt.Println("Error 2: Invalid claims", ok)
 		return "", errors.New("invalid claims")
 	}
 
 	email, ok := claims["email"].(string)
 	if !ok {
+		fmt.Println("Error 3: Email not found in token", ok)
 		return "", errors.New("email not found in token")
 	}
 
@@ -237,7 +238,18 @@ func (ac *AuthController) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, err := ac.getEmailFromJWT(tokenString)
+	// validate the token
+	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		return config.JWTSecret(), nil
+	})
+	if err != nil {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
+		return
+	}
+	// extract email from token WITHOUT verifying. we can do this because the
+	// token has been verified ealrier
+
+	email, err := ac.GetEmailFromJwt(tokenString)
 	if err != nil {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
 		return
@@ -284,7 +296,7 @@ func (ac *AuthController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 	})
 	tokenString, _ := token.SignedString(key)
 
-	resetURL := fmt.Sprintf("http://%s/pwd-reset?token=%s", config.SiteName(), tokenString)
+	resetURL := fmt.Sprintf("http://%s/reset-password?token=%s", config.SiteName(), tokenString)
 	emailData := map[string]string{"reset_url": resetURL}
 
 	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/email/forgot.html", emailData); err != nil {
@@ -301,22 +313,24 @@ func (ac *AuthController) PostResetPassword(w http.ResponseWriter, r *http.Reque
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		fmt.Println("Error decoding JSON:", err)
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
 		return
 	}
-	tokenString := reqBody.Token
-	if tokenString == "" {
+
+	if reqBody.Token == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
 		return
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil || reqBody.Password == "" {
-		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid payload"})
+	if reqBody.Password == "" {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing password"})
 		return
 	}
 
-	email, err := ac.getEmailFromJWT(tokenString)
+	email, err := ac.GetEmailFromJwt(reqBody.Token)
 	if err != nil {
+		fmt.Println("Error getting email from JWT:", err)
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid token"})
 		return
 	}
@@ -327,11 +341,12 @@ func (ac *AuthController) PostResetPassword(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	key := []byte(fmt.Sprintf("%s%s", user.Password, user.UpdatedAt.String()))
-	_, err = jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+	key := fmt.Appendf(nil, "%s%s", user.Password, user.UpdatedAt.String())
+	_, err = jwt.Parse(reqBody.Token, func(token *jwt.Token) (any, error) {
 		return key, nil
 	})
 	if err != nil {
+		fmt.Println("Error parsing JWT:", err)
 		ac.jsonResp(w, http.StatusUnauthorized, map[string]any{"success": false, "msg": "Invalid token"})
 		return
 	}

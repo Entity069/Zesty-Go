@@ -8,7 +8,8 @@ services:
       - .env
     volumes:
       - db-data:/var/lib/mysql
-      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+      # - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
+      - ./backend/db/data.sql:/docker-entrypoint-initdb.d/data.sql:ro
     ports:
       - "3306:3306"
     networks:
@@ -19,6 +20,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+      
   frontend:
     build:
       context: ./frontend

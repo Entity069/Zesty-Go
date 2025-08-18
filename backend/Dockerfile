@@ -11,5 +11,6 @@ FROM alpine:3.20
 WORKDIR /app
 COPY --from=builder /go/bin/main .
 COPY --from=builder /app/templates ./templates
+COPY --from=builder /app/uploads ./uploads
 EXPOSE 3001
 CMD ["./main"]
