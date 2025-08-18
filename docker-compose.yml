@@ -1,7 +1,7 @@
 services:
 
   db:
-    image: mysql:9.3
+    image: mysql:8.0
     container_name: zesty-db
     restart: unless-stopped
     env_file:
@@ -13,12 +13,20 @@ services:
       - "3306:3306"
     networks:
       - app-network
-
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      
   frontend:
     build:
       context: ./frontend
     container_name: zesty-frontend
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     depends_on:
@@ -37,7 +45,8 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 

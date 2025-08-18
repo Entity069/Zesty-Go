@@ -8,19 +8,34 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.VITE_BASE_URL,
         changeOrigin: true,
         secure: false
       },
       '/uploads': {
-        target: 'http://localhost:3001',
+        target: process.env.VITE_BASE_URL,
         changeOrigin: true,
         secure: false
       }
     },
   },
+  
   build: {
     outDir: "dist",
-    sourcemap: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
   },
+  
+  base: '/',
+  
+  preview: {
+    port: 3000,
+    host: true
+  }
 })

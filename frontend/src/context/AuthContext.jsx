@@ -104,12 +104,12 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (password) => {
     try {
       const token = new URLSearchParams(window.location.search).get("token")
-      const response = await fetch(`/api/auth/reset-password?token=${token}`, {
+      const response = await fetch(`/api/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ token, password }),
       })
 
       const data = await response.json()

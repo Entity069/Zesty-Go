@@ -24,7 +24,7 @@ const ResetPassword = () => {
   useEffect(() => {
     const token = searchParams.get("token")
     if (!token) {
-      navigate("/login")
+      navigate("/403")
     }
   }, [searchParams, navigate])
 
