@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,82 @@ type Item struct {
 	Rating          float64 `json:"rating"`
 }
 
+type ItemsCache struct {
+	mu     sync.RWMutex
+	items  map[int][]*Item
+	expiry map[int]time.Time
+	ttl    time.Duration
+}
+
+var itemsCache = &ItemsCache{
+	items:  make(map[int][]*Item),
+	expiry: make(map[int]time.Time),
+	ttl:    5 * time.Minute,
+}
+
+func (c *ItemsCache) SetCache(limit int, items []*Item) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	itemsCopy := make([]*Item, len(items))
+	copy(itemsCopy, items)
+
+	c.items[limit] = itemsCopy
+	c.expiry[limit] = time.Now().Add(c.ttl)
+}
+
+func (c *ItemsCache) GetFromCache(limit int) ([]*Item, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	items, exists := c.items[limit]
+	if !exists {
+		return nil, false
+	}
+
+	expiry, exists := c.expiry[limit]
+	if !exists || time.Now().After(expiry) {
+		return nil, false
+	}
+
+	itemsCopy := make([]*Item, len(items))
+	copy(itemsCopy, items)
+	return itemsCopy, true
+}
+
+// need to invalidate cache when items are created, updated or deleted
+func (c *ItemsCache) InvalidateCache() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.items = make(map[int][]*Item)
+	c.expiry = make(map[int]time.Time)
+}
+
+func (c *ItemsCache) CleanExpiredEntries() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	now := time.Now()
+	for limit, expiry := range c.expiry {
+		if now.After(expiry) {
+			delete(c.items, limit)
+			delete(c.expiry, limit)
+		}
+	}
+}
+
+func StartCacheCleanup() {
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			itemsCache.CleanExpiredEntries()
+		}
+	}()
+}
+
 func (i *Item) Create() error {
 	query := `INSERT INTO items (seller_id, name, description, price, category_id, status, image) VALUES (?, ?, ?, ?, ?, ?, ?)`
 	result, err := DB.Exec(query, i.SellerID, i.Name, i.Description, i.Price, i.CategoryID, i.Status, i.Image)
@@ -36,22 +113,39 @@ func (i *Item) Create() error {
 	}
 
 	i.ID = int(id)
+
+	itemsCache.InvalidateCache()
+
 	return nil
 }
 
 func (i *Item) Update() error {
 	query := `UPDATE items SET name = ?, description = ?, price = ?, category_id = ?, status = ?, image = ? WHERE id = ?`
 	_, err := DB.Exec(query, i.Name, i.Description, i.Price, i.CategoryID, i.Status, i.Image, i.ID)
+
+	if err == nil {
+		itemsCache.InvalidateCache()
+	}
+
 	return err
 }
 
 func (i *Item) Delete() error {
 	query := `DELETE FROM items WHERE id = ?`
 	_, err := DB.Exec(query, i.ID)
+
+	if err == nil {
+		itemsCache.InvalidateCache()
+	}
+
 	return err
 }
 
 func GetAllItems(limit int) ([]*Item, error) {
+	if cachedItems, found := itemsCache.GetFromCache(limit); found {
+		return cachedItems, nil
+	}
+
 	query := `
 	SELECT 
 		i.id, i.seller_id, i.name, i.description, i.price, i.category_id, i.status, i.image, i.created_at, i.updated_at,
@@ -87,6 +181,9 @@ func GetAllItems(limit int) ([]*Item, error) {
 		}
 		items = append(items, item)
 	}
+
+	itemsCache.SetCache(limit, items)
+
 	return items, nil
 }
 

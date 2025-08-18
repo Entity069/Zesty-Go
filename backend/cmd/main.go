@@ -26,6 +26,8 @@ func main() {
 		}
 	}()
 
+	models.StartCacheCleanup()
+
 	router := api.NewRouter()
 	addr := config.SiteName()
 
