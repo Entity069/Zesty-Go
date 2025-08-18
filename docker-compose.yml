@@ -8,8 +8,7 @@ services:
       - .env
     volumes:
       - db-data:/var/lib/mysql
-      # - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
-      - ./backend/db/data.sql:/docker-entrypoint-initdb.d/data.sql:ro
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "3306:3306"
     networks:
@@ -26,6 +25,8 @@ services:
       context: ./frontend
     container_name: zesty-frontend
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     depends_on:
