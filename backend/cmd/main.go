@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
 
 	"github.com/Entity069/Zesty-Go/pkg/api"
@@ -29,11 +30,27 @@ func main() {
 	models.StartCacheCleanup()
 
 	router := api.NewRouter()
+
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{
+			config.FrontendUrl(),
+		}),
+		handlers.AllowedMethods([]string{"GET", "POST"}),
+		handlers.AllowedHeaders([]string{
+			"Accept",
+			"Content-Type",
+			"Content-Length",
+			"Accept-Encoding",
+			"X-CSRF-Token",
+		}),
+		handlers.AllowCredentials(),
+	)(router)
+
 	addr := config.SiteName()
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           router,
+		Handler:           corsHandler,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
