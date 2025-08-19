@@ -33,7 +33,6 @@ const Orders = () => {
         showError("Error", data.msg)
         return
       }
-      showSuccess("Orders Loaded", data.msg)
       setOrders(data.orders)
     } catch (error) {
       showError("Error", "Failed to load orders")

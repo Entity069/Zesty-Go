@@ -39,7 +39,7 @@ const AdminCategories = () => {
       }
 
       setCategories(data.categories)
-      showSuccess("Categories Fetched", "Categories loaded successfully")
+      showSuccess("Categories Fetched", data.msg)
     } catch (error) {
       showError("Error", "Failed to fetch categories")
     } finally {
@@ -87,7 +87,7 @@ const AdminCategories = () => {
       setCategories([...categories, data.category])
       setShowAddModal(false)
       setFormData({ name: "", description: "" })
-      showSuccess("Success", "Category added successfully")
+      showSuccess("Success", data.msg)
     } catch (error) {
       showError("Error", "Failed to add category")
     }
@@ -143,7 +143,7 @@ const AdminCategories = () => {
       setCategories(updatedCategories)
       setShowEditModal(false)
       setFormData({ name: "", description: "" })
-      showSuccess("Success", "Category updated successfully")
+      showSuccess("Success", data.msg)
     } catch (error) {
       showError("Error", "Failed to update category")
     }

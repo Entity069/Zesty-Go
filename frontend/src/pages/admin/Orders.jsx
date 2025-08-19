@@ -40,7 +40,7 @@ const AdminOrders = () => {
       }
 
       setOrders(data.orders)
-      showSuccess("Orders Fetched", "Orders loaded successfully")
+      showSuccess("Orders Fetched", data.msg)
     } catch (error) {
       showError("Error", "Failed to fetch orders")
     } finally {
@@ -94,7 +94,7 @@ const AdminOrders = () => {
       )
 
       setOrders(updatedOrders)
-      showSuccess("Order Delivered", "Order marked as delivered successfully")
+      showSuccess("Order Delivered", data.msg)
     } catch (error) {
       showError("Error", "Failed to deliver order")
     }
@@ -125,7 +125,7 @@ const AdminOrders = () => {
       )
 
       setOrders(updatedOrders)
-      showSuccess("Order Cancelled", "Order cancelled successfully")
+      showSuccess("Order Cancelled", data.msg)
     } catch (error) {
       showError("Error", "Failed to cancel order")
     }

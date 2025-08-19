@@ -88,7 +88,7 @@ const AdminItems = () => {
 
       const updatedItems = items.map((item) => (item.id === itemId ? { ...item, status: newStatus } : item))
       setItems(updatedItems)
-      showSuccess("Item Status Updated", "Item status changed successfully")
+      showSuccess("Item Status Updated", data.msg)
     } catch (error) {
       showError("Error", "Failed to update item status")
     }

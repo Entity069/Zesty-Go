@@ -199,7 +199,7 @@ const Profile = () => {
       const result = await response.json()
       
       if (response.ok && result.success) {
-        showSuccess("Profile Updated", result.msg || "Your profile has been updated successfully!")
+        showSuccess("Profile Updated", result.msg)
         
         if (result.profile_pic) {
           setProfilePic(result.profile_pic)

@@ -57,13 +57,11 @@ const Dashboard = () => {
         })
       }
 
-      // Fetch orders
       const ordersResponse = await fetch("/api/seller/current-orders")
       const ordersData = await ordersResponse.json()
 
       if (ordersData.success) {
         setOrders(ordersData.orders)
-        showSuccess("Dashboard Loaded", "Data fetched successfully")
       } else {
         showError("Error", ordersData.msg)
       }
