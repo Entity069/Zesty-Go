@@ -30,7 +30,7 @@ http {
         add_header X-XSS-Protection "1; mode=block" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header Referrer-Policy "no-referrer-when-downgrade" always;
-        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://s3.tebi.io https://placehold.co data: blob:; connect-src 'self' ${VITE_BASE_URL}; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; media-src 'self'; worker-src 'self'; child-src 'none'; upgrade-insecure-requests;" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://s3.tebi.io https://placehold.co data: blob:; connect-src 'self' ${VITE_BASE_URL}; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; media-src 'self'; worker-src 'self'; child-src 'none';" always;
 
 
 
@@ -40,12 +40,12 @@ http {
         
         location /api/ {
             proxy_pass ${VITE_BASE_URL}/api/;
-            proxy_ssl_name $host;
+            proxy_ssl_name $proxy_host;
             proxy_ssl_server_name on;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
+            proxy_set_header Host $proxy_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
@@ -54,10 +54,10 @@ http {
         
         location /uploads/ {
             proxy_pass ${VITE_BASE_URL}/uploads/;
-            proxy_ssl_name $host;
+            proxy_ssl_name $proxy_host;
             proxy_ssl_server_name on;
             proxy_http_version 1.1;
-            proxy_set_header Host $host;
+            proxy_set_header Host $proxy_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
