@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import Header from "./Header"
+import AdminHeader from "./AdminHeader"
+import SellerHeader from "./SellerHeader"
 import Sidebar from "./Sidebar"
 import AdminSidebar from "./AdminSidebar"
 import SellerSidebar from "./SellerSidebar"
@@ -53,11 +55,24 @@ const Layout = ({ children }) => {
     }
   }
 
+  const getHeaderComponent = () => {
+    if (!user) return <Header onToggleSidebar={toggleSidebar} />
+
+    switch (user.user_type) {
+      case "admin":
+        return <AdminHeader onToggleSidebar={toggleSidebar} />
+      case "seller":
+        return <SellerHeader onToggleSidebar={toggleSidebar} />
+      default:
+        return <Header onToggleSidebar={toggleSidebar} />
+    }
+  }
+
   return (
     <div className="d-flex">
       {getSidebarComponent()}
       <div className="main-content flex-grow-1">
-        <Header onToggleSidebar={toggleSidebar} />
+        {getHeaderComponent()}
         <main>{children}</main>
       </div>
     </div>
