@@ -4,20 +4,32 @@ A Food Ordering System in Go+MySQL.
 
 ## Installation
 
-1. Install [Docker](https://www.docker.com/)
+- Install [Docker](https://www.docker.com/)
 
-2. Clone the repo:
+- Clone the repo:
 
 ```bash
 git clone https://github.com/Entity069/Zesty-Go
 ```
 
-3. Populate the .env.sample files and rename them to .env. If you plan to use Gmail, then you need to use [app-specific passwords](https://support.google.com/accounts/answer/185833?hl=en).
-
-4. Build and run the services defined in `docker-compose.yml`
-
+- Install dependencies, build the server and run the database server.
 ```bash
-docker compose up --build
+make deps
+make run
+make db-up
 ```
 
-The server will be up at http://localhost:3000
+- (Recommended) Alternatively, you can use Docker.
+```bash
+make docker-up
+make migrate-up # run migrations
+make seeds-up # add seeding data
+```
+
+The frontend will be live at http://127.0.0.1:3000
+The backend will be live at http://127.0.0.1:3001
+
+## Note
+- You will need to populate the .env.sample files and rename them to .env.
+
+- For email verification: If you plan to use Gmail, then you need to use [app-specific passwords](https://support.google.com/accounts/answer/185833?hl=en). Currently, sending email uses the `net/smtp` library which only support STARTTLS.
