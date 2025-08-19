@@ -85,7 +85,7 @@ func (ac *AuthController) Register(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, _ := token.SignedString(config.JWTSecret())
 
-	activationURL := fmt.Sprintf("http://%s/api/auth/verify?token=%s", config.FrontendUrl(), tokenString)
+	activationURL := fmt.Sprintf("http://%s/verified?token=%s", config.FrontendUrl(), tokenString)
 
 	emailData := map[string]string{"activation_url": activationURL}
 	if err := utils.SendEmail(body.Email, "Action Required [Zesty]", "templates/email/confirm.html", emailData); err != nil {
@@ -232,7 +232,16 @@ func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ac *AuthController) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	tokenString := r.URL.Query().Get("token")
+	type reqBody struct {
+		Token string `json:"token"`
+	}
+	var body reqBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Invalid JSON"})
+		return
+	}
+
+	tokenString := body.Token
 	if tokenString == "" {
 		ac.jsonResp(w, http.StatusBadRequest, map[string]any{"success": false, "msg": "Missing token"})
 		return
